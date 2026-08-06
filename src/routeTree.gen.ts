@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FinderRouteImport } from './routes/finder'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDealerRouteImport } from './routes/_authenticated/dealer'
 
 const IndexRoute = IndexRouteImport.update({
@@ -52,6 +53,11 @@ const FinderRoute = FinderRouteImport.update({
   path: '/finder',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDealerRoute = AuthenticatedDealerRouteImport.update({
   id: '/dealer',
   path: '/dealer',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/catalog': typeof CatalogRoute
   '/contact': typeof ContactRoute
   '/finder': typeof FinderRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/dealer': typeof AuthenticatedDealerRoute
 }
 export interface FileRoutesByTo {
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogRoute
   '/contact': typeof ContactRoute
   '/finder': typeof FinderRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/dealer': typeof AuthenticatedDealerRoute
 }
 export interface FileRoutesById {
@@ -85,14 +93,30 @@ export interface FileRoutesById {
   '/catalog': typeof CatalogRoute
   '/contact': typeof ContactRoute
   '/finder': typeof FinderRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dealer': typeof AuthenticatedDealerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/about' | '/auth' | '/catalog' | '/contact' | '/finder' | '/dealer'
+    | '/'
+    | '/about'
+    | '/auth'
+    | '/catalog'
+    | '/contact'
+    | '/finder'
+    | '/admin'
+    | '/dealer'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/auth' | '/catalog' | '/contact' | '/finder' | '/dealer'
+  to:
+    | '/'
+    | '/about'
+    | '/auth'
+    | '/catalog'
+    | '/contact'
+    | '/finder'
+    | '/admin'
+    | '/dealer'
   id:
     | '__root__'
     | '/'
@@ -102,6 +126,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/contact'
     | '/finder'
+    | '/_authenticated/admin'
     | '/_authenticated/dealer'
   fileRoutesById: FileRoutesById
 }
@@ -166,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FinderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dealer': {
       id: '/_authenticated/dealer'
       path: '/dealer'
@@ -177,10 +209,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDealerRoute: typeof AuthenticatedDealerRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDealerRoute: AuthenticatedDealerRoute,
 }
 
@@ -199,13 +233,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
