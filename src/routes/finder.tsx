@@ -127,7 +127,15 @@ function FinderPage() {
           <section className="mt-12">
             <p className="label-caps text-primary">Recommendation</p>
             <div className="surface-panel mt-3 whitespace-pre-wrap p-6 text-sm leading-relaxed">
-              {result.answer}
+              {result.answer.split(/(\*\*[^*]+\*\*)/g).map((chunk, i) =>
+                chunk.startsWith("**") && chunk.endsWith("**") ? (
+                  <strong key={i} className="font-semibold">
+                    {chunk.slice(2, -2)}
+                  </strong>
+                ) : (
+                  chunk
+                ),
+              )}
             </div>
 
             {matched.length > 0 && (
