@@ -35,7 +35,7 @@ function AuthPage() {
     if (!loading && user) navigate({ to: "/dealer", replace: true });
   }, [user, loading, navigate]);
 
-  async function signIn(e: React.FormEvent<HTMLFormElement>) {
+  async function signIn(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     setBusy(true);
@@ -44,11 +44,14 @@ function AuthPage() {
       password: String(form.get("password")),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     navigate({ to: "/dealer" });
   }
 
-  async function signUp(e: React.FormEvent<HTMLFormElement>) {
+  async function signUp(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     setBusy(true);
@@ -66,7 +69,10 @@ function AuthPage() {
       },
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (!data.session) {
       toast.success("Account created — check your email to confirm before signing in.");
       return;
@@ -74,14 +80,15 @@ function AuthPage() {
     navigate({ to: "/dealer" });
   }
 
-  async function google() {
+  async function google(): Promise<void> {
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
     if (result.error) {
       setBusy(false);
-      return toast.error("Google sign-in failed. Please try again.");
+      toast.error("Google sign-in failed. Please try again.");
+      return;
     }
     if (result.redirected) return;
     navigate({ to: "/dealer" });
