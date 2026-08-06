@@ -57,7 +57,7 @@ function CatalogPage() {
   });
 
   const setSearch = (patch: Record<string, string | number | undefined>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
+    navigate({ search: { ...search, ...patch }, replace: true });
 
   const filtered = useMemo(() => {
     const q = (search.q ?? "").toLowerCase().trim();
