@@ -1,5 +1,67 @@
+import { useState } from "react";
+
 import { Badge } from "@/components/ui/badge";
-import { TIERS, money, type Product } from "@/lib/catalog";
+import { Input } from "@/components/ui/input";
+import { TIERS, money, unitPriceFor, type Product } from "@/lib/catalog";
+
+function tierLabel(qty: number) {
+  if (qty >= 240) return "240+ pairs";
+  if (qty >= 60) return "60 – 239 pairs";
+  return "12 – 59 pairs";
+}
+
+function BulkCalculator({ product }: { product: Product }) {
+  const [qty, setQty] = useState<number>(product.moq);
+  const safeQty = Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 0;
+  const unit = unitPriceFor(product, safeQty);
+  const total = unit * safeQty;
+  const savings = (Number(product.price_12) - unit) * safeQty;
+  const nextBreak = safeQty < 60 ? 60 : safeQty < 240 ? 240 : null;
+
+  return (
+    <div className="rounded border border-border bg-card p-3">
+      <p className="label-caps text-muted-foreground">Bulk tier calculator</p>
+      <div className="mt-2 flex items-center gap-2">
+        <Input
+          type="number"
+          min={0}
+          step={12}
+          value={safeQty || ""}
+          placeholder="0"
+          aria-label={`Pairs of ${product.name}`}
+          className="h-9 w-24"
+          onChange={(e) => setQty(Number(e.target.value))}
+        />
+        <span className="text-sm text-muted-foreground">pairs</span>
+        <Badge variant="outline" className="ml-auto">{tierLabel(safeQty)}</Badge>
+      </div>
+      <dl className="mt-3 space-y-1 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">Unit price</dt>
+          <dd className="font-semibold">{money(unit)}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-muted-foreground">Order total</dt>
+          <dd className="font-semibold">{money(total)}</dd>
+        </div>
+        {savings > 0 && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted-foreground">Saved vs 12+ price</dt>
+            <dd className="font-semibold text-primary">{money(savings)}</dd>
+          </div>
+        )}
+      </dl>
+      {safeQty > 0 && safeQty < product.moq && (
+        <p className="mt-2 text-xs text-destructive">Below the {product.moq}-pair minimum order quantity.</p>
+      )}
+      {nextBreak && safeQty >= product.moq && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Add {nextBreak - safeQty} more pairs to reach the {nextBreak}+ break.
+        </p>
+      )}
+    </div>
+  );
+}
 
 export function ProductCard({ product, highlight }: { product: Product; highlight?: boolean }) {
   const low = product.stock < 500;
@@ -56,6 +118,8 @@ export function ProductCard({ product, highlight }: { product: Product; highligh
         <p className={`text-sm font-semibold ${low ? "text-destructive" : "text-primary"}`}>
           {product.stock.toLocaleString()} pairs available{low ? " — limited" : ""}
         </p>
+
+        <BulkCalculator product={product} />
       </div>
     </article>
   );
