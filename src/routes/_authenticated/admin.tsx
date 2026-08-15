@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Package, PoundSterling, ShoppingBag, TrendingUp } from "lucide-react";
+import { AlertTriangle, Package, PoundSterling, ShoppingBag, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import {
   Bar,
@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 
 import { PageHeading, SiteShell } from "@/components/site-shell";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,15 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 const STATUSES = ["pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
+
+const LOW_STOCK = 500;
+const CRITICAL_STOCK = 150;
+
+function StockBadge({ stock }: { stock: number }) {
+  if (stock <= CRITICAL_STOCK) return <Badge variant="destructive">Critical</Badge>;
+  if (stock < LOW_STOCK) return <Badge variant="secondary">Low</Badge>;
+  return <Badge variant="outline">Healthy</Badge>;
+}
 
 function AdminDashboard() {
   const isAdmin = useIsAdmin();
@@ -113,6 +123,9 @@ function AdminDashboard() {
   const revenue = live.filter((o) => o.status !== "cancelled").reduce((s, o) => s + Number(o.total), 0);
   const pairs = live.flatMap((o) => o.order_items ?? []).reduce((s, i) => s + i.quantity, 0);
   const stockValue = (products ?? []).reduce((s, p) => s + p.stock * Number(p.price_240), 0);
+  const lowStock = (products ?? [])
+    .filter((p) => p.stock < LOW_STOCK)
+    .sort((a, b) => a.stock - b.stock);
 
   const byCategory = CATEGORIES.map((c) => ({
     category: c,
@@ -140,6 +153,7 @@ function AdminDashboard() {
             { icon: ShoppingBag, label: "Orders", value: String(live.length) },
             { icon: TrendingUp, label: "Pairs ordered", value: pairs.toLocaleString() },
             { icon: Package, label: "Stock at cost", value: money(stockValue) },
+            { icon: AlertTriangle, label: "Low-stock styles", value: String(lowStock.length) },
           ].map((m) => (
             <div key={m.label} className="surface-panel p-5">
               <m.icon className="size-5 text-primary" />
@@ -148,6 +162,31 @@ function AdminDashboard() {
             </div>
           ))}
         </div>
+
+        {lowStock.length > 0 && (
+          <div className="surface-panel mt-6 border-destructive/40 p-6">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-destructive" />
+              <h2 className="text-2xl">Low stock alerts</h2>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Styles under {LOW_STOCK.toLocaleString()} pairs. Anything at or below {CRITICAL_STOCK} pairs is critical.
+            </p>
+            <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {lowStock.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 rounded border border-border bg-card p-3">
+                  <div>
+                    <p className="font-semibold">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {p.sku} · {p.stock.toLocaleString()} pairs · MOQ {p.moq}
+                    </p>
+                  </div>
+                  <StockBadge stock={p.stock} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="surface-panel mt-6 p-6">
           <h2 className="text-2xl">Revenue by category</h2>
@@ -183,6 +222,7 @@ function AdminDashboard() {
                   <TableRow>
                     <TableHead>Style</TableHead>
                     <TableHead className="w-28">Stock</TableHead>
+                    <TableHead className="w-28">Level</TableHead>
                     <TableHead className="w-28">12+</TableHead>
                     <TableHead className="w-28">60+</TableHead>
                     <TableHead className="w-28">240+</TableHead>
@@ -197,6 +237,7 @@ function AdminDashboard() {
                         <p className="text-xs text-muted-foreground">{p.sku} · {p.category}</p>
                       </TableCell>
                       <NumberCell product={p} field="stock" onSave={updateStock.mutate} step={12} />
+                      <TableCell><StockBadge stock={p.stock} /></TableCell>
                       <NumberCell product={p} field="price_12" onSave={updateStock.mutate} step={0.5} />
                       <NumberCell product={p} field="price_60" onSave={updateStock.mutate} step={0.5} />
                       <NumberCell product={p} field="price_240" onSave={updateStock.mutate} step={0.5} />
