@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeading, SiteShell } from "@/components/site-shell";
+import { OrderTimeline } from "@/components/order-timeline";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -313,6 +314,12 @@ function DealerPortal() {
                         </li>
                       ))}
                     </ul>
+                    <div className="mt-5 border-t border-border pt-5">
+                      <p className="label-caps text-muted-foreground">Fulfilment progress</p>
+                      <div className="mt-4">
+                        <OrderTimeline status={o.status} />
+                      </div>
+                    </div>
                     {o.notes && <p className="mt-3 text-xs text-muted-foreground">Notes: {o.notes}</p>}
                   </div>
                 ))}
